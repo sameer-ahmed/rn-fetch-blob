@@ -24,6 +24,7 @@ import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
+import java.net.URLDecoder;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
@@ -670,6 +671,7 @@ public class RNFetchBlobReq extends BroadcastReceiver implements Runnable {
 
 
                 String filePath = null;
+                String contentUri = null;
                 // the file exists in media content database
                 if (c.moveToFirst()) {
                     // #297 handle failed request
@@ -678,7 +680,7 @@ public class RNFetchBlobReq extends BroadcastReceiver implements Runnable {
                         this.callback.invoke("Download manager failed to download from  " + this.url + ". Status Code = " + statusCode, null, null);
                         return;
                     }
-                    String contentUri = c.getString(c.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI));
+                    contentUri = c.getString(c.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI));
                     if ( contentUri != null &&
                             options.addAndroidDownloads.hasKey("mime") &&
                             options.addAndroidDownloads.getString("mime").contains("image")) {
@@ -697,6 +699,21 @@ public class RNFetchBlobReq extends BroadcastReceiver implements Runnable {
                 if (options.addAndroidDownloads.hasKey("path")) {
                     try {
                         String customDest = options.addAndroidDownloads.getString("path");
+                        // checking if file is uploaded with different name
+                        if (contentUri != null && contentUri.length() != 0) {
+                            int lastIndexOfInPath = customDest.lastIndexOf("/");
+                            if (lastIndexOfInPath != -1) {
+                                int lastIndexOfInContentUri = contentUri.lastIndexOf("/");
+                                if (lastIndexOfInContentUri != -1) {
+                                    String newPath = customDest.substring(0, lastIndexOfInPath) + contentUri.substring(lastIndexOfInContentUri);
+                                    try {
+                                        // updating path with new file name
+                                        customDest = URLDecoder.decode(newPath, "UTF-8");
+                                    } catch (Exception exception) {}
+                                }
+                            }
+                        }
+                        
                         boolean exists = new File(customDest).exists();
                         if(!exists)
                             throw new Exception("Download manager download failed, the file does not downloaded to destination.");
