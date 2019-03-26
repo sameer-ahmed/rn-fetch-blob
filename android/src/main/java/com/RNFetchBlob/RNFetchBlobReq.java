@@ -674,10 +674,10 @@ public class RNFetchBlobReq extends BroadcastReceiver implements Runnable {
                     return;
                 }
 
+                String filePath = null;
+                String contentUri = null;
+
                 try { 
-                    String filePath = null;
-                    String contentUri = null;
-                    
                     // the file exists in media content database
                     if (c.moveToFirst()) {
 
